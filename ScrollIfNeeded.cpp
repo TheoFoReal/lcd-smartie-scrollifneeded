@@ -8,6 +8,15 @@
 static char resultBuffer[512];
 static int scrollOffset = 0;
 
+// --- Plugin Template ---
+// Returned when the plugin is selected in LCD Smartie's plugin list.
+// This is the string that gets inserted/shown for the plugin.
+DLL_EXPORT char* __stdcall SmartieAbout() {
+    static const char* templateText =
+        "$dll(ScrollIfNeeded,1,[length]/[text],[speed]/[empty frames])";
+    return (char*)templateText;
+}
+
 DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
     // --- Parse param1 into width and text ---
     int width = 20;
