@@ -36,8 +36,9 @@ DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
     paddedText[sizeof(paddedText) - 1] = '\0';
     currentLen = (int)strlen(paddedText);
 
+    // Append a number of spaces equal to the designated display width.
     int j;
-    for (j = 0; j < textLength && currentLen + j < (int)sizeof(paddedText) - 1; j++) {
+    for (j = 0; j < width && currentLen + j < (int)sizeof(paddedText) - 1; j++) {
         paddedText[currentLen + j] = ' ';
     }
     currentLen += j;
