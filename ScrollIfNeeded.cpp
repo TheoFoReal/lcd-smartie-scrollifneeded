@@ -1,0 +1,63 @@
+#include <windows.h>
+#include <string.h>
+#include <stdio.h>
+
+#define DLL_EXPORT extern "C" __declspec(dllexport)
+
+static char resultBuffer[512];
+static int scrollOffset = 0;
+
+DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
+    if (param1 == NULL || param1[0] == '\0') {
+        strcpy(resultBuffer, "");
+        scrollOffset = 0;
+        return resultBuffer;
+    }
+
+    int width = 20;
+    if (param2 != NULL && param2[0] != '\0') {
+        int parsedWidth = atoi(param2);
+        if (parsedWidth > 0) width = parsedWidth;
+    }
+
+    int textLength = (int)strlen(param1);
+
+    if (textLength <= width) {
+        strncpy(resultBuffer, param1, sizeof(resultBuffer) - 1);
+        resultBuffer[sizeof(resultBuffer) - 1] = '\0';
+        scrollOffset = 0;
+        return resultBuffer;
+    }
+
+    static char paddedText[2048];
+    int currentLen = 0;
+
+    strncpy(paddedText, param1, sizeof(paddedText) - 1);
+    paddedText[sizeof(paddedText) - 1] = '\0';
+    currentLen = (int)strlen(paddedText);
+
+    int j;
+    for (j = 0; j < textLength && currentLen + j < (int)sizeof(paddedText) - 1; j++) {
+        paddedText[currentLen + j] = ' ';
+    }
+    currentLen += j;
+    paddedText[currentLen] = '\0';
+
+    strncat(paddedText, param1, sizeof(paddedText) - strlen(paddedText) - 1);
+
+    int paddedLength = (int)strlen(paddedText);
+    if (scrollOffset >= paddedLength) scrollOffset = 0;
+
+    int i;
+    for (i = 0; i < width; i++) {
+        int index = (scrollOffset + i) % paddedLength;
+        resultBuffer[i] = paddedText[index];
+    }
+    resultBuffer[width] = '\0';
+
+    scrollOffset++;
+    return resultBuffer;
+}
+
+DLL_EXPORT void __stdcall SmartieInit() { scrollOffset = 0; }
+DLL_EXPORT void __stdcall SmartieFini() {}
