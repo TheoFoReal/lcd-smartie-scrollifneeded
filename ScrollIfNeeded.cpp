@@ -4,6 +4,9 @@
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 
+// Number of characters to advance per plugin call.
+#define SCROLL_STEP 2
+
 static char resultBuffer[512];
 static int scrollOffset = 0;
 
@@ -32,13 +35,28 @@ DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
     static char paddedText[2048];
     int currentLen = 0;
 
-    // Copy the text once.
     strncpy(paddedText, param1, sizeof(paddedText) - 1);
     paddedText[sizeof(paddedText) - 1] = '\0';
     currentLen = (int)strlen(paddedText);
 
-    // Append a number of spaces equal to the designated display width.
-    int spacesToAdd = width;
+    // Number of spaces = width + (SCROLL_STEP - 1).
+    //
+    // Why the extra (SCROLL_STEP - 1) spaces?
+    // The display shows a "window" of `width` characters starting at
+    // scrollOffset. For the display to be completely empty (all spaces),
+    // scrollOffset must land inside the gap such that the whole window
+    // falls within the spaces.
+    //
+    // With a gap of exactly `width` spaces, only ONE specific offset gives
+    // a fully empty frame. If SCROLL_STEP doesn't land on that exact offset
+    // (e.g. because textLength is odd and we step by 2), the display jumps
+    // from "text + spaces" straight to "spaces + text" and never appears
+    // fully empty.
+    //
+    // Adding (SCROLL_STEP - 1) extra spaces gives a gap of at least
+    // SCROLL_STEP consecutive fully-empty offsets, guaranteeing we hit one
+    // of them regardless of step parity.
+    int spacesToAdd = width + (SCROLL_STEP - 1);
     if (currentLen + spacesToAdd >= (int)sizeof(paddedText)) {
         spacesToAdd = (int)sizeof(paddedText) - currentLen - 1;
     }
@@ -47,13 +65,6 @@ DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
         currentLen += spacesToAdd;
         paddedText[currentLen] = '\0';
     }
-
-    // NOTE: We intentionally do NOT append the text again here.
-    // Because the scroll wraps via modulo, appending the text a second time
-    // would create the pattern TEXT SPACES TEXT TEXT SPACES TEXT ...
-    // which produces two back-to-back texts with no gap every other loop.
-    // Using only TEXT + SPACES gives a clean repeating pattern of
-    // TEXT SPACES TEXT SPACES ...
 
     int paddedLength = (int)strlen(paddedText);
     if (scrollOffset >= paddedLength) scrollOffset = 0;
@@ -65,7 +76,8 @@ DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
     }
     resultBuffer[width] = '\0';
 
-    scrollOffset++;
+    // Advance by SCROLL_STEP characters per call instead of 1.
+    scrollOffset += SCROLL_STEP;
     return resultBuffer;
 }
 
