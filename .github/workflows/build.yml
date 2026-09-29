@@ -1,0 +1,18 @@
+name: Build LCD Smartie Plugin
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile DLL
+        run: cl /LD /O2 /Fe:ScrollIfNeeded.dll ScrollIfNeeded.cpp
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScrollIfNeeded.dll
+          path: ScrollIfNeeded.dll
