@@ -32,19 +32,28 @@ DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
     static char paddedText[2048];
     int currentLen = 0;
 
+    // Copy the text once.
     strncpy(paddedText, param1, sizeof(paddedText) - 1);
     paddedText[sizeof(paddedText) - 1] = '\0';
     currentLen = (int)strlen(paddedText);
 
     // Append a number of spaces equal to the designated display width.
-    int j;
-    for (j = 0; j < width && currentLen + j < (int)sizeof(paddedText) - 1; j++) {
-        paddedText[currentLen + j] = ' ';
+    int spacesToAdd = width;
+    if (currentLen + spacesToAdd >= (int)sizeof(paddedText)) {
+        spacesToAdd = (int)sizeof(paddedText) - currentLen - 1;
     }
-    currentLen += j;
-    paddedText[currentLen] = '\0';
+    if (spacesToAdd > 0) {
+        memset(paddedText + currentLen, ' ', spacesToAdd);
+        currentLen += spacesToAdd;
+        paddedText[currentLen] = '\0';
+    }
 
-    strncat(paddedText, param1, sizeof(paddedText) - strlen(paddedText) - 1);
+    // NOTE: We intentionally do NOT append the text again here.
+    // Because the scroll wraps via modulo, appending the text a second time
+    // would create the pattern TEXT SPACES TEXT TEXT SPACES TEXT ...
+    // which produces two back-to-back texts with no gap every other loop.
+    // Using only TEXT + SPACES gives a clean repeating pattern of
+    // TEXT SPACES TEXT SPACES ...
 
     int paddedLength = (int)strlen(paddedText);
     if (scrollOffset >= paddedLength) scrollOffset = 0;
