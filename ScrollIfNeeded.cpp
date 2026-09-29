@@ -8,18 +8,22 @@
 static char resultBuffer[512];
 static int scrollOffset = 0;
 
-// Function 1: Displays text statically if it fits, otherwise scrolls it.
-//
-// param1: Formatted as "[width]/[text]"
-//         Example: "7/Chance of Rain"
-//         - width = number of designated character slots (7 in the example)
-//         - text  = the string to display ("Chance of Rain")
-//
-// param2: The number of characters to scroll per update (e.g. "2").
-//         If omitted or invalid, defaults to 1.
+// --- Plugin Description ---
+// LCD Smartie calls this when loading the plugin to display a description.
+DLL_EXPORT char* __stdcall SmartieAbout() {
+    static const char* aboutText =
+        "ScrollIfNeeded: Scrolls text only if it exceeds the display width. "
+        "Usage: $dll(ScrollIfNeeded.dll,1,[width]/[text],[step]) "
+        "Example: $dll(ScrollIfNeeded.dll,1,7/Chance of Rain,2) "
+        "Parameter 1: [width]/[text] - width is the number of character slots, "
+        "text is the string to display. "
+        "Parameter 2: number of characters to scroll per update (default 1).";
+    return (char*)aboutText;
+}
+
 DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
     // --- Parse param1 into width and text ---
-    int width = 20;                 // default width if parsing fails
+    int width = 20;
     char* text = param1;
     char param1Copy[1024];
 
@@ -29,18 +33,16 @@ DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
 
         char* slash = strchr(param1Copy, '/');
         if (slash != NULL) {
-            *slash = '\0';                   // terminate the width part
+            *slash = '\0';
             int parsedWidth = atoi(param1Copy);
             if (parsedWidth > 0) {
                 width = parsedWidth;
             }
-            text = slash + 1;                // everything after the slash
+            text = slash + 1;
         } else {
-            // No slash found: treat the whole parameter as text, keep default width
             text = param1Copy;
         }
     } else {
-        // Empty or NULL param1
         strcpy(resultBuffer, "");
         scrollOffset = 0;
         return resultBuffer;
@@ -55,7 +57,6 @@ DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
         }
     }
 
-    // If the text is empty, just return empty.
     if (text[0] == '\0') {
         strcpy(resultBuffer, "");
         scrollOffset = 0;
@@ -64,11 +65,11 @@ DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
 
     int textLength = (int)strlen(text);
 
-    // If the text fits within the width, display it statically.
+    // If the text fits, display it statically.
     if (textLength <= width) {
         strncpy(resultBuffer, text, sizeof(resultBuffer) - 1);
         resultBuffer[sizeof(resultBuffer) - 1] = '\0';
-        scrollOffset = 0; // reset scroll position
+        scrollOffset = 0;
         return resultBuffer;
     }
 
@@ -80,11 +81,6 @@ DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
     paddedText[sizeof(paddedText) - 1] = '\0';
     currentLen = (int)strlen(paddedText);
 
-    // Number of spaces = width + (step - 1).
-    //
-    // This guarantees at least `step` consecutive fully-empty frames,
-    // so the display will always show a blank window before the text
-    // reappears, regardless of the step size.
     int spacesToAdd = width + (step - 1);
     if (currentLen + spacesToAdd >= (int)sizeof(paddedText)) {
         spacesToAdd = (int)sizeof(paddedText) - currentLen - 1;
@@ -98,7 +94,6 @@ DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
     int paddedLength = (int)strlen(paddedText);
     if (scrollOffset >= paddedLength) scrollOffset = 0;
 
-    // Extract the visible window.
     int i;
     for (i = 0; i < width; i++) {
         int index = (scrollOffset + i) % paddedLength;
@@ -106,7 +101,6 @@ DLL_EXPORT char* __stdcall function1(char* param1, char* param2) {
     }
     resultBuffer[width] = '\0';
 
-    // Advance by the requested step size.
     scrollOffset += step;
     return resultBuffer;
 }
