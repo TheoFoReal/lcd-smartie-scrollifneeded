@@ -9,4 +9,4 @@
 **Clarification**:
 - [length] = number of designated characters
 - [speed] = how many characters scrolled per frame
-- [empty frames] = once string is fully out of view, number of frames waited until new scroll cycle begins
+- [empty frames] = once string is fully out of view, how many frames waited until new scroll cycle begins
